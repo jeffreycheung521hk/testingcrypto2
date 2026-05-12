@@ -412,4 +412,4 @@ Rust (Edition 2021) · Tokio · Axum 0.7 · `solana-sdk` 2.1.21 · SQLite (SQLx 
 
 ## License
 
-Private / Not yet licensed.
+MIT License. See [`LICENSE`](LICENSE).
