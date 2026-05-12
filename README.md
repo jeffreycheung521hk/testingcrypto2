@@ -8,6 +8,105 @@
 
 ---
 
+## Reviewer Quick Path
+
+If you are reviewing this project for the Frontier Hackathon, start here.
+
+### 1. What this project is
+
+ClawSolana is a policy-gated transaction control plane for Solana AI agents.
+
+The AI can propose DeFi actions, but it cannot directly sign or send transactions.
+Every executable action must pass through:
+
+```text
+natural-language intent
+→ strict tool call
+→ transaction proposal
+→ simulation
+→ policy evaluation
+→ approval / wallet signing
+→ verification
+→ on-chain submission
+```
+
+The core safety claim is:
+
+> The bound policy contract is the product, not the AI.
+
+### 2. What was demonstrated
+
+The submitted product video demonstrates one end-to-end path:
+
+```text
+chat intent
+→ conditional Solend deposit rule
+→ user-signed funding transaction with on-chain hash memo
+→ watcher observes the funded bounded order
+→ autonomous mainnet execution within signed budget/rule bounds
+```
+
+The demo is represented by two paired mainnet transactions:
+
+| Step | Description | Evidence |
+|------|-------------|----------|
+| Funding leg | User signs a funding transaction and anchors the canonical rule-identity hash through `spl-memo` | Linked in the product video comments / pinned note |
+| Execution leg | ClawSolana watcher executes the bounded Solend deposit on mainnet | Linked in the product video comments / pinned note |
+
+Other mainnet proofs in this repository are independent verification artifacts, not all steps of the submitted product video.
+
+### 3. Fast source verification
+
+For a clean source-level check:
+
+```bash
+git clone https://github.com/jeffreycheung521hk/testingcrypto2.git
+cd testingcrypto2
+
+cargo check
+cargo test -- --skip devnet_orca_swap_e2e
+```
+
+The skipped test expects a local devnet keypair at `data/devnet.json`.
+
+### 4. Mainnet proof ledger
+
+The proof index links public Solscan transactions and explains what each proof does and does not prove:
+
+```bash
+cat docs/proofs/INDEX.md
+```
+
+Recommended reading order:
+
+1. `docs/proofs/INDEX.md`
+2. `docs/proofs/PHASE5_CLOSEOUT.md`
+3. `ARCHITECTURE.md`
+4. `PITCH.md`
+
+### 5. Local daemon run path
+
+To run the local daemon:
+
+```bash
+cp config/default.toml claw.toml
+
+export CLAW_API_TOKEN=devtest123
+export OPENAI_API_KEY=your_openai_key_here
+
+cargo run --release --bin clawd
+```
+
+The daemon binds locally:
+
+```
+127.0.0.1:7070
+```
+
+Live Solana execution requires additional configuration: a funded devnet/mainnet keypair or external wallet path, RPC endpoint, and explicit live-execution environment gates. The default repository is intended to be safe for offline build/test verification.
+
+---
+
 ## Mainnet Proven, Today
 
 A natural-language user message drove a real OpenAI provider through the strict one-turn `ConversationHandler` and the production Solend pipeline, finalizing a USDC deposit on Solana mainnet. **The LLM proposes only — approval and wallet signing remain human-controlled at every step.**
