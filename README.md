@@ -21,6 +21,128 @@ A natural-language user message drove a real OpenAI provider through the strict 
 
 ---
 
+## Demo scope and known rough edges
+
+This is a 5-week hackathon prototype. The submitted product video records
+one path end-to-end: a chat-first conditional Solend deposit with autonomous
+execution.
+
+The demo path is represented by two paired mainnet transactions:
+
+1. a user-signed funding transaction, including an on-chain `spl-memo`
+   anchoring the canonical rule-identity hash; and
+2. a watcher-signed autonomous execution transaction shortly afterwards.
+
+These transactions are linked in the product video comments / pinned note
+and can be independently verified on Solscan.
+
+Other mainnet finalizations referenced in this repository — including the
+Phase 5G LLM-guided Solend deposit, Phase 6I-K Solend withdraw, Jupiter
+A1 / A2 swaps, Phase 4C non-LLM baseline, and W5b Stage 2 substrate — are
+independent proofs on separate dates. They are not all steps of the
+submitted product video.
+
+**Timezone note.** Dates in `docs/WEEKLY_UPDATES.md` and elsewhere in this
+repository use the author's local time (UTC+8). The Frontier Hackathon
+submission deadline was 2026-05-11 06:59 UTC. Solscan timestamps and
+on-chain slot numbers are the authoritative timing source for any mainnet
+proof; use those for timing-sensitive verification.
+
+Some substrate code outside the demonstrated W5i path — including
+`programs/clawsol-program-v2/`, Jupiter conditional sibling-instruction
+verification, withdraw / refund logic, and devnet harnesses — is included
+in the repository for completeness but is not exercised in the product
+video.
+
+### To actually run the W5i demo locally
+
+The W5i live path requires the following environment variables (the
+daemon fail-closes if any are missing):
+
+```bash
+# LLM provider (one of)
+export OPENAI_API_KEY=sk-...           # OpenAI gpt-4o-mini (Phase 5G path)
+# or
+export ANTHROPIC_API_KEY=sk-ant-...    # Anthropic Claude (wired, unit-test green)
+
+# Solana RPC
+export CLAW_RPC_URL=https://api.mainnet-beta.solana.com
+# or for higher rate limit:
+export HELIUS_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+
+# Daemon HTTP auth (any opaque string)
+export CLAW_API_TOKEN=devtest123
+
+# W5i autonomous-execution gates (all required to enable the live path)
+export CLAW_STAGE2_W5I_AUTO_EXECUTION=1
+export CLAW_STAGE2_LIVE_CHAT_EXECUTION=1
+export CLAW_STAGE2_CHAT_EXECUTION_APPROVED="W5G LIVE CHAT CONDITIONAL DEPOSIT APPROVED"
+export CLAW_STAGE2_CLUSTER=mainnet-beta
+export CLAW_STAGE2_DELEGATED_KEYPAIR_PATH=/path/to/your/keypair.json
+
+# Start the daemon
+cargo run --release --bin clawd        # binds 127.0.0.1:7070
+
+# Start the frontend (in another terminal)
+cd frontend
+cp .env.example .env.local             # then fill NEXT_PUBLIC_GATEWAY_TOKEN to match CLAW_API_TOKEN
+npm install && npm run dev             # http://localhost:3000/chat
+```
+
+The full chronological setup (daemon PID, branch HEAD, exact env values
+used in the recorded demo run, paired tx signatures, operator-side notes)
+lives in `docs/WEEKLY_UPDATES.md` May 12 W5i entry.
+
+### Demo-essential file scope
+
+The W5i demo path exercises:
+
+- **Backend Rust:** `crates/gateway`, `crates/api`, `crates/state-store`,
+  `crates/agent-runtime`, `crates/wallet-engine`, `crates/risk-engine`,
+  `crates/tool-system`, plus shared `crates/types`, `crates/observability`,
+  `crates/solana-core`
+- **Frontend:** `frontend/src/app/chat/`, `frontend/src/lib/`
+- **Config:** `config/default.toml` (with local `claw.toml` override)
+- **External:** Helius mainnet RPC, OpenAI `gpt-4o-mini`, Solana
+  mainnet-beta, Solend Main Pool USDC reserve, Save / Solend display-APY
+  API
+
+The W5i demo path does **not** exercise:
+
+- `programs/clawsol-program-v2/` (Stage 2 on-chain program substrate;
+  W5i signs Solend instructions directly with the controlled wallet
+  keypair, not via a ClawSol on-chain program)
+- W6 refund logic
+- Jupiter conditional auto-execute (J4 sibling-ix verifier + J5
+  dual-bracket prototype — preview-only)
+- Orca Whirlpool flows (devnet only)
+- Quorum / multi-step approval infrastructure (substrate)
+
+### `cargo test` rough edge
+
+One devnet integration test, `devnet_orca_swap_e2e` in
+`crates/solana-core/tests/`, expects a local keypair at
+`data/devnet.json`. A fresh clone will not have this file.
+
+For clean offline verification, run:
+
+```bash
+cargo test -- --skip devnet_orca_swap_e2e
+```
+
+To run the devnet test, create and fund a devnet keypair:
+
+```bash
+mkdir -p data
+solana-keygen new --outfile data/devnet.json
+solana airdrop 1 $(solana-keygen pubkey data/devnet.json) --url devnet
+```
+
+For the full chronological engineering record, see
+[`docs/WEEKLY_UPDATES.md`](docs/WEEKLY_UPDATES.md).
+
+---
+
 ## 📅 Weekly Engineering Record — Start Here
 
 > **For the dated, chronological view of every milestone, scope decision, and
